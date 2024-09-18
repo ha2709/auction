@@ -1,6 +1,30 @@
 # Auction
 auction using peer to peer
 
+# Installation 
+
+To clone the project 
+
+`https://github.com/ha2709/auction.git`
+
+I use Node `v18.19.1`
+
+to Run the test
+
+`npx jest`
+
+To run the peer 
+
+`node src/client.js`
+
+Run the server 
+
+`node src/server.js`
+
+run the bootstrap node:
+
+`hyperdht --bootstrap --host 127.0.0.1 --port 30001`
+
 
 Your task is to create a simplified P2P auction solution based on Hyperswarm RPC and Hypercores.
 

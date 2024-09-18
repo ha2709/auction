@@ -1,57 +1,221 @@
-'use strict'
+"use strict";
 
-const RPC = require('@hyperswarm/rpc')
-const DHT = require('hyperdht')
-const Hypercore = require('hypercore')
-const Hyperbee = require('hyperbee')
-const crypto = require('crypto')
+const RPC = require("@hyperswarm/rpc");
+const DHT = require("hyperdht");
+const Hypercore = require("hypercore");
+const Hyperbee = require("hyperbee");
+const crypto = require("crypto");
+const  {Auction, parseRequest,notifyAllClients } = require("../utils/index");
+// Array to store connected clients' public keys
+let connectedClients = [];
+ 
 
 const main = async () => {
   // hyperbee db
-  const hcore = new Hypercore('./db/rpc-server')
-  const hbee = new Hyperbee(hcore, { keyEncoding: 'utf-8', valueEncoding: 'binary' })
-  await hbee.ready()
+  const hcore = new Hypercore("./db/rpc-server");
+  const hbee = new Hyperbee(hcore, {
+    keyEncoding: "utf-8",
+    valueEncoding: "binary",
+  });
+  await hbee.ready();
 
   // resolved distributed hash table seed for key pair
-  let dhtSeed = (await hbee.get('dht-seed'))?.value
+  let dhtSeed = (await hbee.get("dht-seed"))?.value;
   if (!dhtSeed) {
     // not found, generate and store in db
-    dhtSeed = crypto.randomBytes(32)
-    await hbee.put('dht-seed', dhtSeed)
+    dhtSeed = crypto.randomBytes(32);
+    await hbee.put("dht-seed", dhtSeed);
   }
-
+  // Instantiate the Auction class with Hyperbee
+  const auctionManager = new Auction(hbee);
   // start distributed hash table, it is used for rpc service discovery
   const dht = new DHT({
     port: 40001,
     keyPair: DHT.keyPair(dhtSeed),
-    bootstrap: [{ host: '127.0.0.1', port: 30001 }] // note boostrap points to dht that is started via cli
-  })
+    bootstrap: [{ host: "127.0.0.1", port: 30001 }], // note boostrap points to dht that is started via cli
+  });
 
   // resolve rpc server seed for key pair
-  let rpcSeed = (await hbee.get('rpc-seed'))?.value
+  let rpcSeed = (await hbee.get("rpc-seed"))?.value;
   if (!rpcSeed) {
-    rpcSeed = crypto.randomBytes(32)
-    await hbee.put('rpc-seed', rpcSeed)
+    rpcSeed = crypto.randomBytes(32);
+    await hbee.put("rpc-seed", rpcSeed);
   }
 
   // setup rpc server
-  const rpc = new RPC({ seed: rpcSeed, dht })
-  const rpcServer = rpc.createServer()
-  await rpcServer.listen()
-  console.log('rpc server started listening on public key:', rpcServer.publicKey.toString('hex'))
+  const rpc = new RPC({ seed: rpcSeed, dht });
+  const rpcServer = rpc.createServer();
+  await rpcServer.listen();
+  console.log(
+    "rpc server started listening on public key:",
+    rpcServer.publicKey.toString("hex")
+  );
   // rpc server started listening on public key: 763cdd329d29dc35326865c4fa9bd33a45fdc2d8d2564b11978ca0d022a44a19
 
   // bind handlers to rpc server
-  rpcServer.respond('ping', async (reqRaw) => {
+  rpcServer.respond("ping", async (reqRaw) => {
     // reqRaw is Buffer, we need to parse it
-    const req = JSON.parse(reqRaw.toString('utf-8'))
+    const req = JSON.parse(reqRaw.toString("utf-8"));
 
-    const resp = { nonce: req.nonce + 1 }
+    const resp = { nonce: req.nonce + 1 };
 
     // we also need to return buffer response
-    const respRaw = Buffer.from(JSON.stringify(resp), 'utf-8')
-    return respRaw
-  })
-}
+    const respRaw = Buffer.from(JSON.stringify(resp), "utf-8");
+    return respRaw;
+  });
+// Register clients when they connect
+rpcServer.respond("registerClient", async (reqRaw) => {
+  const req = parseRequest(reqRaw);
+  const clientPubKey = req.clientPubKey;
 
-main().catch(console.error)
+  if (!connectedClients.includes(clientPubKey)) {
+    connectedClients.push(clientPubKey);
+    console.log(`Client registered: ${clientPubKey}`);
+  }
+
+  return Buffer.from(JSON.stringify({ status: "registered" }), "utf-8");
+});
+
+ 
+  // Register the 'auctionOpened' handler
+  rpcServer.respond("auctionOpened", async (reqRaw) => {
+    try {
+      const req = parseRequest(reqRaw);
+
+      // Safely convert auctionId and auctionDetails to strings if they exist
+      const auctionId = req.auctionId
+        ? String(req.auctionId)
+        : "unknown_auction_id";
+      const auctionDetails = req.auctionDetails
+        ? String(req.auctionDetails)
+        : "no_details_provided";
+      const creatorId = req.creator ? String(req.creator) : "unknown_creator";
+      const initialPrice = req.initialPrice ? parseFloat(req.initialPrice) : 0;
+
+      console.log(
+        `Auction opened with ID: ${auctionId}, Details: ${auctionDetails}`
+      );
+
+      if (
+        auctionId === "unknown_auction_id" ||
+        auctionDetails === "no_details_provided"
+      ) {
+        throw new Error(
+          "Invalid auction data. Missing auctionId or auctionDetails."
+        );
+      }
+      const auctionResponse = await auctionManager.createAuction(
+        auctionId,
+        auctionDetails,
+        creatorId,
+        initialPrice
+      );
+      console.log(73, auctionResponse);
+      // Return the response generated by auctionManager.createAuction
+      return Buffer.from(JSON.stringify(auctionResponse), "utf-8");
+    } catch (error) {
+      console.error("Error handling auctionOpened:", error);
+      return Buffer.from(
+        JSON.stringify({ status: "error", message: error.message }),
+        "utf-8"
+      );
+    }
+  });
+
+  rpcServer.respond("newBid", async (reqRaw) => {
+    try {
+      // Parse the incoming bid request
+      const req = parseRequest(reqRaw);
+
+      // Ensure the auctionId and bid exist
+      const auctionId = req.auctionId
+        ? String(req.auctionId)
+        : "unknown_auction_id";
+      const bid = req.bid ? req.bid : null;
+
+      if (auctionId === "unknown_auction_id" || !bid) {
+        throw new Error(
+          "Invalid bid data. Missing auctionId or bid information."
+        );
+      }
+
+      console.log(
+        `Received new bid for auction ${auctionId}: ${bid.price} by ${bid.bidder}`
+      );
+
+      const auctionResponse = await auctionManager.placeBid(auctionId, bid);
+      return Buffer.from(JSON.stringify(auctionResponse), "utf-8");
+    } catch (error) {
+      console.error("Error handling newBid:", error);
+      return Buffer.from(
+        JSON.stringify({ status: "error", message: error.message }),
+        "utf-8"
+      );
+    }
+  });
+
+  // Register the 'auctionClosed' handler
+  rpcServer.respond("auctionClosed", async (reqRaw) => {
+    try {
+      const req = parseRequest(reqRaw);
+
+      const auctionId = req.auctionId
+        ? String(req.auctionId)
+        : "unknown_auction_id";
+      const callerId = req.callerId
+        ? String(req.callerId)
+        : "unknown_caller_id";
+
+      if (
+        auctionId === "unknown_auction_id" ||
+        callerId === "unknown_caller_id"
+      ) {
+        throw new Error("Invalid auction or caller data.");
+      }
+
+      console.log(
+        `Received request to close auction ${auctionId} from ${callerId}`
+      );
+
+      // Call auctionManager to close the auction and return its response
+      const closeResponse = await auctionManager.closeAuction(
+        auctionId,
+        callerId
+      );
+      if (closeResponse.status === "success") {
+        // Notify all connected clients about the closed auction
+        await notifyAllClients(rpc, auctionId, closeResponse);
+      }
+      // Return the response from auctionManager.closeAuction
+      return Buffer.from(JSON.stringify(closeResponse), "utf-8");
+    } catch (error) {
+      console.error("Error handling auctionClosed:", error);
+
+      // Return an error response
+      return Buffer.from(
+        JSON.stringify({
+          status: "error",
+          message: error.message,
+        }),
+        "utf-8"
+      );
+    }
+  });
+
+  // Register clients when they connect  
+  rpcServer.respond("registerClient", async (reqRaw) => {
+    const req = JSON.parse(reqRaw.toString("utf-8"));
+    const clientPubKey = req.clientPubKey;
+
+    if (!connectedClients.includes(clientPubKey)) {
+      connectedClients.push(clientPubKey);
+      console.log(`Client registered: ${clientPubKey}`);
+    }
+
+    return Buffer.from(JSON.stringify({ status: "registered" }), "utf-8");
+  });
+// Helper function to notify all connected clients
+ 
+};
+
+main().catch(console.error);

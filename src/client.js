@@ -88,6 +88,15 @@ const main = async () => {
     );
   });
 
+  // Respond to auctionClosedNotification
+  rpcServer.respond("auctionClosedNotification", async (reqRaw) => {
+    const req = JSON.parse(reqRaw.toString("utf-8"));
+    console.log(
+      `Notification: Auction ${req.auctionId} closed with details: ${JSON.stringify(
+        req.auction
+      )}`
+    );
+  });
   await rpcServer.listen();
 
   console.log(
@@ -96,6 +105,28 @@ const main = async () => {
 
   // payload for request
   // const payload = { nonce: 126 }
+  // Register the client for auctionClosedNotification
+  const registerClient = async () => {
+    const payload = { clientPubKey: rpcServer.publicKey.toString("hex") };
+    const payloadRaw = Buffer.from(JSON.stringify(payload), "utf-8");
+
+    for (const peer of peers) {
+      try {
+        const responseRaw = await rpc.request(
+          peer.pubKey,
+          "registerClient",
+          payloadRaw
+        );
+        const response = JSON.parse(responseRaw.toString("utf-8"));
+        console.log(`Client registered with peer: ${peer.pubKey.toString("hex")}`);
+      } catch (error) {
+        console.error(
+          `Error registering client with peer ${peer.pubKey.toString("hex")}:`,
+          error
+        );
+      }
+    }
+  };
 
   const notifyAuctionOpened = async (
     auctionId,
@@ -189,7 +220,8 @@ const main = async () => {
 
     console.log(`Auction ${auctionId} closed and result propagated.`);
   };
-
+  // Register the client when the program starts
+  await registerClient();
   // sending request and handling response
   // see console output on server code for public key as this changes on different instances
   // const respRaw = await rpc.request(serverPubKey, 'ping', payloadRaw)

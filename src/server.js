@@ -5,7 +5,8 @@ const DHT = require('hyperdht')
 const Hypercore = require('hypercore')
 const Hyperbee = require('hyperbee')
 const crypto = require('crypto')
-
+const Auction = require('../utils/index');
+console.log(9, Auction)
 const main = async () => {
   // hyperbee db
   const hcore = new Hypercore('./db/rpc-server')
@@ -19,7 +20,8 @@ const main = async () => {
     dhtSeed = crypto.randomBytes(32)
     await hbee.put('dht-seed', dhtSeed)
   }
-
+    // Instantiate the Auction class with Hyperbee
+    const auctionManager = new Auction(hbee);
   // start distributed hash table, it is used for rpc service discovery
   const dht = new DHT({
     port: 40001,
@@ -52,6 +54,74 @@ const main = async () => {
     const respRaw = Buffer.from(JSON.stringify(resp), 'utf-8')
     return respRaw
   })
+
+  // Register the 'auctionOpened' handler
+  rpcServer.respond('auctionOpened', async (reqRaw) => {
+    try {
+      const req = JSON.parse(reqRaw.toString('utf-8'))
+  
+      // Safely convert auctionId and auctionDetails to strings if they exist
+      const auctionId = req.auctionId ? String(req.auctionId) : 'unknown_auction_id'
+      const auctionDetails = req.auctionDetails ? String(req.auctionDetails) : 'no_details_provided'
+  
+      console.log(`Auction opened with ID: ${auctionId}, Details: ${auctionDetails}`)
+  
+      if (auctionId === 'unknown_auction_id' || auctionDetails === 'no_details_provided') {
+        throw new Error('Invalid auction data. Missing auctionId or auctionDetails.')
+      }
+      await auctionManager.createAuction(auctionId, auctionDetails);
+
+  
+      // Return a success response
+      return Buffer.from(JSON.stringify({ status: 'auction opened', auctionId }), 'utf-8')
+    } catch (error) {
+      console.error('Error handling auctionOpened:', error)
+      return Buffer.from(JSON.stringify({ status: 'error', message: error.message }), 'utf-8')
+    }
+  })
+
+  rpcServer.respond('newBid', async (reqRaw) => {
+    try {
+      // Parse the incoming bid request
+      const req = JSON.parse(reqRaw.toString('utf-8'))
+  
+      // Ensure the auctionId and bid exist
+      const auctionId = req.auctionId ? String(req.auctionId) : 'unknown_auction_id'
+      const bid = req.bid ? req.bid : null
+  
+      if (auctionId === 'unknown_auction_id' || !bid) {
+        throw new Error('Invalid bid data. Missing auctionId or bid information.')
+      }
+  
+      console.log(`Received new bid for auction ${auctionId}: ${bid.amount} by ${bid.bidder}`)
+  
+      await auctionManager.placeBid(auctionId, bid);
+  
+       
+  
+      // Return a success response
+      return Buffer.from(JSON.stringify({ status: 'bid placed', auctionId, bid }), 'utf-8')
+    } catch (error) {
+      console.error('Error handling newBid:', error)
+      return Buffer.from(JSON.stringify({ status: 'error', message: error.message }), 'utf-8')
+    }
+  })
+  
+
+  // Register the 'auctionClosed' handler
+  rpcServer.respond('auctionClosed', async (reqRaw) => {
+    const req = JSON.parse(reqRaw.toString('utf-8'))
+    console.log(`Auction ${req.auctionId} closed with winner: ${JSON.stringify(req.winner, null, 2)}`)
+
+    const auctionId = req.auctionId ? String(req.auctionId) : 'unknown_auction_id'
+    const winner = req.winner ? req.winner : null
+    
+
+    await auctionManager.closeAuction(auctionId, winner);
+
+    return Buffer.from(JSON.stringify({ status: 'auction closed' }), 'utf-8')
+  })
+
 }
 
 main().catch(console.error)

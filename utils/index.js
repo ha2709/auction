@@ -124,7 +124,7 @@ class Auction {
 
       // Parse the auction data
       const auction = JSON.parse(auctionEntry.value);
-      console.log(126, auction);
+    //   console.log(126, auction);
       // Check if the caller is the creator of the auction
         if (auction.creator !== callerId) {
           console.log("Only the creator of the auction can close it.");
@@ -207,9 +207,9 @@ const parseRequest = (reqRaw) => {
   
         // Send the notification to the client
         await rpc.request(clientPubKeyBuffer, "auctionClosedNotification", payload);
-        console.log(`Notified client ${clientPubKey} about auction ${auctionId} closure.`);
+        console.log(`Notified client ${clientPubKeyBuffer.toString("hex")} about auction ${auctionId} closure.`);
       } catch (err) {
-        console.error(`Failed to notify client ${clientPubKey}:`, err);
+        console.error(`Failed to notify client:`, err);
       }
     }
   };

@@ -13,13 +13,14 @@ to Run the test
 
 `npx jest`
 
-To run the peer 
+Run the server first
+
+`node src/server.js`
+
+Then run the peer 
 
 `node src/client.js`
 
-Run the server 
-
-`node src/server.js`
 
 run the bootstrap node:
 

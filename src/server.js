@@ -14,31 +14,7 @@ let connectedClients = [];
 const parseRequest = (reqRaw) => {
   return JSON.parse(reqRaw.toString("utf-8"));
 };
-
-// Helper function to notify all connected clients
-// const notifyAllClients = async (rpc, auctionId, message, auctionData) => {
-//   for (const clientPubKey of connectedClients) {
-//     try {
-//       const payload = Buffer.from(
-//         JSON.stringify({
-//           auctionId,
-//           message,
-//           auction: auctionData,
-//         }),
-//         "utf-8"
-//       );
-//       // Convert clientPubKey from string to Buffer if needed
-//       const clientPubKeyBuffer = Buffer.isBuffer(clientPubKey)
-//         ? clientPubKey
-//         : Buffer.from(clientPubKey, "hex");
-//       // Send the notification to the client
-//       await rpc.request(clientPubKeyBuffer, "auctionClosedNotification", payload);
-//       console.log(`Notified client ${clientPubKey} about auction ${auctionId} closure.`);
-//     } catch (err) {
-//       console.error(`Failed to notify client ${clientPubKey}:`, err);
-//     }
-//   }
-// };
+ 
 
 const main = async () => {
   // Hyperbee DB initialization
@@ -142,7 +118,7 @@ const main = async () => {
       const closeResponse = await auctionManager.closeAuction(String(auctionId), String(callerId));
 
       if (closeResponse.status === "success") {
-        await notifyAllClients(rpc, auctionId, "Auction closed", closeResponse.auction);
+        await notifyAllClients(rpc, connectedClients, auctionId, "Auction closed", closeResponse.auction);
       }
 
       return Buffer.from(JSON.stringify(closeResponse), "utf-8");

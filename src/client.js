@@ -7,12 +7,8 @@ const Hyperbee = require("hyperbee");
 const crypto = require("crypto");
 
 const { askQuestion, sendRPCRequestToPeers, rl } = require("../utils/index");
-// Create readline interface for user interaction
-
-
+ 
 const myClientId = crypto.randomBytes(16).toString("hex"); // Generate a unique client ID
-
-
 
 const main = async () => {
   // hyperbee db
@@ -118,7 +114,7 @@ const main = async () => {
 
   while (true) {
     const action = await askQuestion(
-      "Choose an action: (1) Open Auction, (2) Place Bid, (3) Close Auction: "
+      "Choose an action: (1) Open Auction, (2) Place Bid, (3) Close Auction , (4) Exit: "
     );
 
     if (action === "1") {

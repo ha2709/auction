@@ -5,8 +5,8 @@ const DHT = require("hyperdht");
 const Hypercore = require("hypercore");
 const Hyperbee = require("hyperbee");
 const crypto = require("crypto");
-const {Auction, notifyAllClients} = require("../utils/index");
-
+const {notifyAllClients} = require("../utils/index");
+const {Auction} = require("../utils/auction")
 // Array to store connected clients' public keys
 let connectedClients = [];
 

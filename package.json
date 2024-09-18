@@ -1,0 +1,27 @@
+{
+  "name": "auction",
+  "version": "1.0.0",
+  "description": "auction using hyperswarm",
+  "main": "client.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ha2709/auction.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ha2709/auction/issues"
+  },
+  "homepage": "https://github.com/ha2709/auction#readme",
+  "dependencies": {
+    "@hyperswarm/rpc": "^3.3.2",
+    "crypto": "^1.0.1",
+    "hyperbee": "^2.20.1",
+    "hypercore": "^10.37.22",
+    "hyperdht": "^6.17.0"
+  }
+}

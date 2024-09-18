@@ -125,10 +125,10 @@ class Auction {
       const auction = JSON.parse(auctionEntry.value);
       console.log(126, auction);
       // Check if the caller is the creator of the auction
-      //   if (auction.creator !== callerId) {
-      //     console.log("Only the creator of the auction can close it.");
-      //     return;
-      //   }
+        if (auction.creator !== callerId) {
+          console.log("Only the creator of the auction can close it.");
+          return;
+        }
 
       // Check if there are any bids to select a winner
       if (!auction.bids || auction.bids.length === 0) {

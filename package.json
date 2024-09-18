@@ -4,7 +4,8 @@
   "description": "auction using hyperswarm",
   "main": "client.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+     
+    "test": "jest",
     "start": "node server.js"
   },
   "repository": {
@@ -23,5 +24,8 @@
     "hyperbee": "^2.20.1",
     "hypercore": "^10.37.22",
     "hyperdht": "^6.17.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }

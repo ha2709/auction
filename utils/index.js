@@ -1,3 +1,4 @@
+const readline = require("readline");
 class Auction {
   constructor(hbee) {
     this.hbee = hbee; // Hyperbee instance to store auction data
@@ -123,7 +124,7 @@ class Auction {
 
       // Parse the auction data
       const auction = JSON.parse(auctionEntry.value);
-      console.log(126, auction);
+    //   console.log(126, auction);
       // Check if the caller is the creator of the auction
         if (auction.creator !== callerId) {
           console.log("Only the creator of the auction can close it.");
@@ -170,9 +171,19 @@ class Auction {
       };
     }
   }
-}
+} 
 
  
+const peers = [
+    // Add peers' public keys (hex) of other clients here for simplicity
+    {
+      pubKey: Buffer.from(
+        "8ebcb4a46623edd4b539d8995275040a3581b8f0d3aafc52991d2c531c566326",
+        "hex"
+      ),
+    },
+  ];
+  
 const parseRequest = (reqRaw) => {
     return JSON.parse(reqRaw.toString("utf-8"));
   };
@@ -196,13 +207,16 @@ const parseRequest = (reqRaw) => {
   
         // Send the notification to the client
         await rpc.request(clientPubKeyBuffer, "auctionClosedNotification", payload);
-        console.log(`Notified client ${clientPubKey} about auction ${auctionId} closure.`);
+        console.log(`Notified client ${clientPubKeyBuffer.toString("hex")} about auction ${auctionId} closure.`);
       } catch (err) {
-        console.error(`Failed to notify client ${clientPubKey}:`, err);
+        console.error(`Failed to notify client:`, err);
       }
     }
   };
-
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 //  function to ask for input
 const askQuestion = (query) => {
     return new Promise((resolve) => rl.question(query, resolve));
@@ -224,9 +238,10 @@ const askQuestion = (query) => {
   };
 // Export the Auction class
 module.exports = {
-    Auction
+    Auction,
     parseRequest,
     notifyAllClients,
     askQuestion,
-    sendRPCRequestToPeers
+    sendRPCRequestToPeers, 
+    rl
 };

@@ -5,27 +5,10 @@ const DHT = require("hyperdht");
 const Hypercore = require("hypercore");
 const Hyperbee = require("hyperbee");
 const crypto = require("crypto");
-const readline = require("readline");
-const { askQuestion, sendRPCRequestToPeers} = require("../utils/index");
-// Create readline interface for user interaction
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
 
-const peers = [
-  // Add peers' public keys (hex) of other clients here for simplicity
-  {
-    pubKey: Buffer.from(
-      "8ebcb4a46623edd4b539d8995275040a3581b8f0d3aafc52991d2c531c566326",
-      "hex"
-    ),
-  },
-];
-
+const { askQuestion, sendRPCRequestToPeers, rl } = require("../utils/index");
+ 
 const myClientId = crypto.randomBytes(16).toString("hex"); // Generate a unique client ID
-
-
 
 const main = async () => {
   // hyperbee db
@@ -131,7 +114,7 @@ const main = async () => {
 
   while (true) {
     const action = await askQuestion(
-      "Choose an action: (1) Open Auction, (2) Place Bid, (3) Close Auction: "
+      "Choose an action: (1) Open Auction, (2) Place Bid, (3) Close Auction , (4) Exit: "
     );
 
     if (action === "1") {

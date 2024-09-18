@@ -1,4 +1,4 @@
-const Auction = require('../utils/index');  // Import the Auction class
+const {Auction} = require('../utils/index');  // Import the Auction class
 
 let auctionManager;  // This will hold the mocked instance
 
@@ -29,7 +29,7 @@ describe('auctionClosed Handler', () => {
   afterEach(() => {
     jest.clearAllMocks();  // Reset mocks after each test
   });
-
+ 
   test('should successfully close an auction and return success response', async () => {
     const reqRaw = Buffer.from(JSON.stringify({
       auctionId: 'test_auction_123',
@@ -131,5 +131,10 @@ describe('auctionClosed Handler', () => {
       message: 'Auction with ID test_auction_123 not found'
     });
   });
-  
+   // If there are any open connections, close them after all tests
+   afterAll(async () => {
+    if (auctionManager && typeof auctionManager.close === 'function') {
+      await auctionManager.close(); // Example: closing the connection
+    }
+  });
 });

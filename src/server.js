@@ -5,9 +5,11 @@ const DHT = require("hyperdht");
 const Hypercore = require("hypercore");
 const Hyperbee = require("hyperbee");
 const crypto = require("crypto");
-const Auction = require("../utils/index");
+const  {Auction, parseRequest,notifyAllClients } = require("../utils/index");
 // Array to store connected clients' public keys
 let connectedClients = [];
+ 
+
 const main = async () => {
   // hyperbee db
   const hcore = new Hypercore("./db/rpc-server");
@@ -63,7 +65,7 @@ const main = async () => {
   });
 // Register clients when they connect
 rpcServer.respond("registerClient", async (reqRaw) => {
-  const req = JSON.parse(reqRaw.toString("utf-8"));
+  const req = parseRequest(reqRaw);
   const clientPubKey = req.clientPubKey;
 
   if (!connectedClients.includes(clientPubKey)) {
@@ -78,7 +80,7 @@ rpcServer.respond("registerClient", async (reqRaw) => {
   // Register the 'auctionOpened' handler
   rpcServer.respond("auctionOpened", async (reqRaw) => {
     try {
-      const req = JSON.parse(reqRaw.toString("utf-8"));
+      const req = parseRequest(reqRaw);
 
       // Safely convert auctionId and auctionDetails to strings if they exist
       const auctionId = req.auctionId
@@ -123,7 +125,7 @@ rpcServer.respond("registerClient", async (reqRaw) => {
   rpcServer.respond("newBid", async (reqRaw) => {
     try {
       // Parse the incoming bid request
-      const req = JSON.parse(reqRaw.toString("utf-8"));
+      const req = parseRequest(reqRaw);
 
       // Ensure the auctionId and bid exist
       const auctionId = req.auctionId
@@ -155,7 +157,7 @@ rpcServer.respond("registerClient", async (reqRaw) => {
   // Register the 'auctionClosed' handler
   rpcServer.respond("auctionClosed", async (reqRaw) => {
     try {
-      const req = JSON.parse(reqRaw.toString("utf-8"));
+      const req = parseRequest(reqRaw);
 
       const auctionId = req.auctionId
         ? String(req.auctionId)
@@ -182,7 +184,7 @@ rpcServer.respond("registerClient", async (reqRaw) => {
       );
       if (closeResponse.status === "success") {
         // Notify all connected clients about the closed auction
-        await notifyAllClients(auctionId, closeResponse);
+        await notifyAllClients(rpc, auctionId, closeResponse);
       }
       // Return the response from auctionManager.closeAuction
       return Buffer.from(JSON.stringify(closeResponse), "utf-8");
@@ -213,26 +215,7 @@ rpcServer.respond("registerClient", async (reqRaw) => {
     return Buffer.from(JSON.stringify({ status: "registered" }), "utf-8");
   });
 // Helper function to notify all connected clients
-const notifyAllClients = async (auctionId, closeResponse) => {
-  for (const clientPubKey of connectedClients) {
-    try {
-      const payload = Buffer.from(JSON.stringify({
-        auctionId: auctionId,
-        message: "Auction closed",
-        auction: closeResponse.auction,
-      }), "utf-8");
-      // Convert clientPubKey from string to Buffer if needed
-      const clientPubKeyBuffer = Buffer.isBuffer(clientPubKey)
-        ? clientPubKey
-        : Buffer.from(clientPubKey, "hex");
-      // Send the notification to the client
-      await rpc.request(clientPubKeyBuffer, "auctionClosedNotification", payload);
-      console.log(`Notified client ${clientPubKey} about auction ${auctionId} closure.`);
-    } catch (err) {
-      console.error(`Failed to notify client ${clientPubKey}:`, err);
-    }
-  }
-};
+ 
 };
 
 main().catch(console.error);

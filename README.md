@@ -7,6 +7,8 @@ To clone the project
 
 `https://github.com/ha2709/auction.git`
 
+I use Node `v18.19.1`
+
 to Run the test
 
 `npx jest`

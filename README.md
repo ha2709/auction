@@ -5,8 +5,14 @@ auction using peer to peer
 
 To clone the project 
 
-`https://github.com/ha2709/auction.git`
+`git clone https://github.com/ha2709/auction.git`
 
+Then 
+
+```
+ cd auction
+ npm install 
+```
 I use Node `v18.19.1`
 
 to Run the test

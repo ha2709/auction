@@ -13,18 +13,26 @@ to Run the test
 
 `npx jest`
 
+
+run the bootstrap node:
+
+`hyperdht --bootstrap --host 127.0.0.1 --port 30001`
+
 Run the server first
 
 `node src/server.js`
+
+Then copy from terminal the public key
+
+`RPC server started listening on public key: 6e503705773ddc42c7882df18d4e7a05b3931cbbe8fcdb216246a976c1fe06f4`
+
+copy to line 8 on utils/index.js
 
 Then run the peer 
 
 `node src/client.js`
 
 
-run the bootstrap node:
-
-`hyperdht --bootstrap --host 127.0.0.1 --port 30001`
 
 
 Your task is to create a simplified P2P auction solution based on Hyperswarm RPC and Hypercores.

@@ -13,6 +13,7 @@ Then
  cd auction
  npm install 
 ```
+
 I use Node `v18.19.1`
 
 to Run the test
@@ -38,9 +39,10 @@ Then run the peer
 
 `node src/client.js`
 
+[ How does it works ](https://drive.google.com/file/d/1VgU7P_QYFB9BOWIC_WTWpx56b6h_bBbV/view?usp=sharing)
 
-
-
+ [Video demo](https://drive.google.com/file/d/1pho7WSjvrPdjgBevaFvHtDt-a1kzuCTB/view?usp=sharing)
+ 
 Your task is to create a simplified P2P auction solution based on Hyperswarm RPC and Hypercores.
 
 With the RPC Client, you should be able to open auctions (e.g. selling a picture for 50 USDt). Upon opening the auction 
